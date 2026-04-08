@@ -1,0 +1,134 @@
+=====================================================================
+  EJERCICIO 1 - CONCLUSIONES Y HALLAZGOS
+  Prueba de Carga: Login FakeStore API con K6
+=====================================================================
+
+DESCRIPCIÓN DE LA PRUEBA
+─────────────────────────
+  Servicio probado : POST https://fakestoreapi.com/auth/login
+  Herramienta      : K6 v0.55.0
+  Duración total   : 50s minutos
+  Escenario        : Ramping VUs (0 → 10 → 30 → 50 → 0 VUs)
+         (Aumentar VUs por etapa para aumentar TPs)
+  Datos de entrada : 5 pares usuario/contraseña desde usuarios.csv
+
+CRITERIOS DE ACEPTACIÓN
+────────────────────────
+  [1] TPS mínimo             : 20 transacciones por segundo
+  [2] Tiempo de respuesta    : p(95) ≤ 1500 ms
+  [3] Tasa de error máxima   : < 3% del total de peticiones
+
+
+RESULTADOS
+__________
+```bash
+         /\      Grafana   /‾‾/
+    /\  /  \     |\  __   /  /
+   /  \/    \    | |/ /  /   ‾‾\
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/
+
+
+     execution: local
+        script: login_load_test.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 50 max VUs, 1m20s max duration (incl. graceful stop):
+              * carga_login: Up to 50 looping VUs for 50s over 4 stages (gracefulRampDown: 30s, gracefulStop: 30s)
+
+     ✓ status 201
+     ✓ tiene token
+     ✓ tiempo de respuesta < 1500ms
+
+     checks.........................: 100.00% ✓ 7956      ✗ 0
+     data_received..................: 979 kB  19 kB/s
+     data_sent......................: 237 kB  4.7 kB/s
+   ✓ error_rate.....................: 0.00%   ✓ 0         ✗ 1326
+     http_req_blocked...............: avg=1.45ms   min=0s       med=0s       max=87.39ms  p(90)=0s       p(95)=0s
+     http_req_connecting............: avg=629.98µs min=0s       med=0s       max=66.52ms  p(90)=0s       p(95)=0s
+   ✓ http_req_duration..............: avg=408.83ms min=389.71ms med=402.43ms max=911ms    p(90)=421.89ms p(95)=445.49ms
+       { expected_response:true }...: avg=408.83ms min=389.71ms med=402.43ms max=911ms    p(90)=421.89ms p(95)=445.49ms
+     http_req_failed................: 0.00%   ✓ 0         ✗ 1326
+     http_req_receiving.............: avg=282.21µs min=0s       med=0s       max=54.3ms   p(90)=515.2µs  p(95)=1.02ms
+     http_req_sending...............: avg=235.72µs min=0s       med=322.84µs max=3.36ms   p(90)=509.35µs p(95)=542.37µs
+     http_req_tls_handshaking.......: avg=818.52µs min=0s       med=0s       max=48.85ms  p(90)=0s       p(95)=0s
+     http_req_waiting...............: avg=408.31ms min=389.31ms med=402.08ms max=910.41ms p(90)=420.78ms p(95)=444.34ms
+     http_reqs......................: 1326    26.252705/s
+     iteration_duration.............: avg=911.05ms min=889.77ms med=903.52ms max=1.47s    p(90)=932.73ms p(95)=951.72ms
+     iterations.....................: 1326    26.252705/s
+   ✓ response_time_ms...............: avg=408.83ms min=389.71ms med=402.43ms max=911ms    p(90)=421.89ms p(95)=445.49ms
+     vus............................: 3       min=0       max=49
+     vus_max........................: 50      min=50      max=50
+
+
+======= RESUMEN ESTADÍSTICO DE PRUEBA DE CARGA =======
+Peticiones totales  : 1326
+TPS promedio        : 26.25 req/s
+Errores             : 0.00 %
+Duración avg        : 408.83 ms
+Duración p90        : 421.89 ms
+Duración p95        : 445.49 ms
+Duración máx        : 911.01 ms
+========================================================
+
+running (0m50.5s), 00/50 VUs, 1326 complete and 0 interrupted iterations
+```
+
+HALLAZGOS
+──────────
+
+  1. RENDIMIENTO (TPS)
+     ─────────────────
+     Durante las distintas fases, el sistema alcanzó un TPS promedio de 25.25 req/s
+
+     → Criterio [1] CUMPLIDO ✓
+
+  2. TIEMPO DE RESPUESTA
+     ────────────────────
+     La API de FakeStore respondió de forma estable en condiciones normales:
+       - Promedio (avg) : 408.83 ms
+       - Percentil 90   : 421.89 ms
+       - Percentil 95   : 445.49 ms
+       - Máximo         : 911.01 ms
+
+     El percentil 95 se mantuvo por debajo de 1500 ms.
+     Incluso con un pico de 50 VUs, el tiempo máximo obtenido es inferior a los 1500ms.
+
+     → Criterio [2] CUMPLIDO ✓
+
+  3. TASA DE ERROR
+     ──────────────
+     Se devuelven correctamente todas las respuestas HTTP 201 para
+     los usuarios válidos dentro de usuarios.csv.
+
+     Tasa de errores observada: 0%
+
+     → Criterio [3] CUMPLIDO ✓
+
+CONCLUSIONES
+────────────
+  1. El script cumple con los tres criterios de aceptación definidos
+     para la prueba de carga del servicio de login.
+
+  2. El servicio de FakeStore API tiene un rendimiento aceptable para
+     cargas de hasta  50 VUs concurrentes; los resultados muestran también
+     que hay margen para aumentar la cantidad de UVs concurrentes.
+
+  3. La parametrización mediante CSV funciona correctamente: K6 itera
+     de forma circular sobre los 5 usuarios, distribuyendo la carga
+     entre todas las credenciales disponibles.
+
+   4. Las validaciones implementadas (status 201, presencia de token y
+      tiempo < 1500 ms) son suficientes para detectar regresiones
+      funcionales y de performance en futuras ejecuciones.
+
+RECOMENDACIONES
+───────────────
+  1. Agregar más credenciales válidas al CSV para evitar que los
+     errores 401 eleven artificialmente la tasa de error cuando se
+     escala la prueba.
+
+  2. Buscar la cantidad de UVs máximos que alcancen el límite de 
+     aceptación de TPS para conocer el margen de rendimiento.
+
+=====================================================================
