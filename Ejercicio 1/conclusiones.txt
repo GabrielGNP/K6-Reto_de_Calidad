@@ -112,7 +112,7 @@ CONCLUSIONES
 
   2. El servicio de FakeStore API tiene un rendimiento aceptable para
      cargas de hasta  50 VUs concurrentes; los resultados muestran también
-     que hay margen para aumentar la cantidad de UVs concurrentes.
+     que hay margen para aumentar la cantidad de VUs concurrentes.
 
   3. La parametrización mediante CSV funciona correctamente: K6 itera
      de forma circular sobre los 5 usuarios, distribuyendo la carga
@@ -128,7 +128,7 @@ RECOMENDACIONES
      errores 401 eleven artificialmente la tasa de error cuando se
      escala la prueba.
 
-  2. Buscar la cantidad de UVs máximos que alcancen el límite de 
+  2. Buscar la cantidad de VUs máximos que alcancen el límite de 
      aceptación de TPS para conocer el margen de rendimiento.
 
 =====================================================================
